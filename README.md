@@ -1,0 +1,1 @@
+# streamlit-padrao-partidas
