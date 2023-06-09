@@ -1,3 +1,6 @@
+import streamlit as st
+import pandas as pd
+
 # Função para extrair os resultados do primeiro tempo, tempo final e partidas
 def extrair_resultados(resultado):
     if resultado != '?\n\n?':
