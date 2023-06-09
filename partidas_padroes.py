@@ -1,68 +1,6 @@
 import streamlit as st
 import pandas as pd
 
-# Função para extrair os resultados do primeiro tempo, tempo final e partidas
-def extrair_resultados(resultado):
-    if resultado != '?\n\n?':
-        resultado_split = resultado.split('\n\n')
-        primeiro_tempo = resultado_split[1]
-        tempo_final = resultado_split[0]
-        return primeiro_tempo, tempo_final
-    else:
-        return None, None
-
-# Função para realizar o tratamento do arquivo Excel e retornar o DataFrame tratado
-def tratar_arquivo_excel(file_path):
-    df = pd.read_excel(file_path, sheet_name='Página4')
-    df.columns = df.iloc[0]
-    df = df[1:].reset_index(drop=True)
-    colunas_para_manter = df.columns[:-3]
-    df = df[colunas_para_manter]
-    df = df.sort_index(ascending=False)
-    df = df.reset_index(drop=True)
-    df['Primeiro tempo'], df['Tempo final'] = zip(*df.iloc[:, 1:].apply(extrair_resultados, axis=1))
-    df_novo = df.dropna(subset=['Primeiro tempo', 'Tempo final'])
-    df_novo = df_novo[~df_novo['Primeiro tempo'].str.contains('\.', na=False) & ~df_novo['Tempo final'].str.contains('\.', na=False)]
-    df_novo['Primeiro tempo'] = df_novo['Primeiro tempo'].replace('oth', '9x9')
-    df_novo = df_novo[(df_novo['Primeiro tempo'] != '?') & (df_novo['Tempo final'] != '?')]
-    return df_novo
-
-# Função para analisar as partidas
-def analisar_partidas(df, primeiro_tempo, tempo_final, num_total_partidas, num_conjuntos):
-    # Filtrar as partidas que correspondem aos resultados do primeiro tempo e tempo final selecionados
-    df_filtrado = df[(df['Primeiro tempo'] == primeiro_tempo) & (df['Tempo final'] == tempo_final)]
-
-    # Verificar se há pelo menos num_total_partidas partidas correspondentes
-    if len(df_filtrado) < num_total_partidas:
-        return "Número insuficiente de partidas correspondentes."
-
-    # Criar um dicionário para contar o número de ocorrências de cada conjunto de num_conjuntos partidas consecutivas
-    ocorrencias = {}
-    for i in range(len(df_filtrado) - num_conjuntos + 1):
-        conjunto = tuple(df_filtrado.iloc[i:i+num_conjuntos]['Partidas'])
-        if conjunto in ocorrencias:
-            ocorrencias[conjunto] += 1
-        else:
-            ocorrencias[conjunto] = 1
-
-    # Retornar o resultado da análise
-    return ocorrencias
-
-# Função para criar o dicionário a partir do resultado da análise
-def criar_novo_dicionario(resultado_analise, num_total_partidas):
-    novo_dicionario = {}
-    for conjunto, ocorrencias in resultado_analise.items():
-        if ocorrencias >= num_total_partidas:
-            novo_dicionario[conjunto] = ocorrencias
-    return novo_dicionario
-
-# Função para estilizar o DataFrame
-def estilo_dataframe(df):
-    styled_df = df.style.set_properties(**{'background-color': 'lightblue',
-                                           'color': 'black',
-                                           'border-color': 'white'})
-    return styled_df
-
 # Carregando o arquivo Excel
 uploaded_file = st.file_uploader("Faça upload do arquivo Excel", type="xlsx")
 
@@ -76,11 +14,95 @@ if uploaded_file:
     num_total_partidas = st.number_input("Até que quantidade de entradas após o padrão ocorre você quer análise?", min_value=1, value=50, step=1)
     num_conjuntos = st.selectbox("Qual o padrão de tip (de 1 a 5 jogos consecutivos)?", [1, 2, 3, 4, 5])
 
-    # Analisando as partidas
+    # Define a primeira linha como os nomes das colunas
+    df.columns = df.iloc[0]
+
+    # Remove a primeira linha, que agora são os nomes das colunas duplicados
+    df = df[1:].reset_index(drop=True)
+
+    # Obtém todas as colunas, exceto as duas últimas
+    colunas_para_manter = df.columns[:-3]
+
+    # Mantém apenas as colunas selecionadas
+    df = df[colunas_para_manter]
+
+    # Inverte o dataframe
+    df = df.sort_index(ascending=False)
+
+    # Reseta o index
+    df = df.reset_index(drop=True)
+
+    # Função para extrair os resultados do primeiro tempo, tempo final e partidas
+    def extrair_resultados(resultado):
+        if resultado != '?\n\n?':
+            resultado_split = resultado.split('\n\n')
+            primeiro_tempo = resultado_split[1]
+            tempo_final = resultado_split[0]
+            return primeiro_tempo, tempo_final
+        else:
+            return None, None
+
+    # Criando listas vazias para armazenar os valores extraídos
+    primeiro_tempo_list = []
+    tempo_final_list = []
+    partidas_list = []
+
+    # Percorrendo o dataframe original e extraindo os resultados
+    for index, row in df.iterrows():
+        for col in df.columns[1:]:
+            resultado = row[col]
+            primeiro_tempo, tempo_final = extrair_resultados(resultado)
+            primeiro_tempo_list.append(primeiro_tempo)
+            tempo_final_list.append(tempo_final)
+            partidas_list.append(col)
+
+    # Criando o novo dataframe com as colunas desejadas
+    df_novo = pd.DataFrame({
+        'Primeiro tempo': primeiro_tempo_list,
+        'Tempo final': tempo_final_list,
+    })
+
+    num_linhas = len(df_novo)
+    df_novo['Partidas'] = range(1, num_linhas + 1)
+
+    # Obtendo o nome da última coluna
+    ultima_coluna = df_novo.columns[-1]
+
+    # Extraindo a coluna "Partidas"
+    coluna_partidas = df_novo.pop(ultima_coluna)
+
+    # Inserindo a coluna "Partidas" na terceira posição
+    df_novo.insert(0, ultima_coluna, coluna_partidas)
+
+    df_novo = df_novo.dropna(subset=['Primeiro tempo', 'Tempo final'])
+
+    df_novo = df_novo[~df_novo['Primeiro tempo'].str.contains('\.', na=False) & ~df_novo['Tempo final'].str.contains('\.', na=False)]
+
+    df_novo['Primeiro tempo'] = df_novo['Primeiro tempo'].replace('oth', '9x9')
+
+    # Remover células com valor "?"
+    df_novo = df_novo[(df_novo['Primeiro tempo'] != '?') & (df_novo['Tempo final'] != '?')]
+
+    df = df_novo
+
+    # Chamada da função para análise das partidas
     resultado_analise = analisar_partidas(df, primeiro_tempo, tempo_final, num_total_partidas, num_conjuntos)
 
-    # Criando o dicionário com o resultado da análise
-    novo_dicionario = criar_novo_dicionario(resultado_analise, num_total_partidas)
+    def criar_novo_dicionario(resultado_analise, num_total_partidas):
+        novo_dicionario = {}
+
+        for i in range(num_total_partidas):
+            novo_dicionario[i + 1] = []
+            
+            for chave in resultado_analise:
+                if i < len(resultado_analise[chave]):
+                    novo_dicionario[i + 1].append(resultado_analise[chave][i])
+            
+            if len(novo_dicionario[i + 1]) == 0:
+                del novo_dicionario[i + 1]
+                break
+        
+        return novo_dicionario
 
     dicionario = criar_novo_dicionario(resultado_analise, num_total_partidas)
 
@@ -173,8 +195,9 @@ if uploaded_file:
     # Resetar os índices do DataFrame após a ordenação
     df = df.reset_index(drop=True)
 
-    # Estilizando o DataFrame
-    styled_df = estilo_dataframe(df)
+    styled_df = df.style.set_properties(**{'background-color': 'lightblue',
+                                           'color': 'black',
+                                           'border-color': 'white'})
 
     # Exibindo o resultado
     st.write("Resultado da análise:")
