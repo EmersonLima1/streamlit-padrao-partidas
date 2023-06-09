@@ -1,4 +1,2 @@
 pandas
-itertools
-tabulate
 streamlit
