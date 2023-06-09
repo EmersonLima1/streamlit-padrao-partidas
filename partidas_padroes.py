@@ -8,12 +8,6 @@ if uploaded_file:
     # Tratando o arquivo Excel e obtendo o DataFrame tratado
     df = pd.read_excel(uploaded_file, sheet_name='Página4')
 
-    # Perguntas ao usuário
-    primeiro_tempo = st.selectbox("Qual o resultado do primeiro tempo?", df['Primeiro tempo'].unique())
-    tempo_final = st.selectbox("Qual o resultado do tempo final?", df['Tempo final'].unique())
-    num_total_partidas = st.number_input("Até que quantidade de entradas após o padrão ocorre você quer análise?", min_value=1, value=50, step=1)
-    num_conjuntos = st.selectbox("Qual o padrão de tip (de 1 a 5 jogos consecutivos)?", [1, 2, 3, 4, 5])
-
     # Define a primeira linha como os nomes das colunas
     df.columns = df.iloc[0]
 
@@ -84,6 +78,29 @@ if uploaded_file:
     df_novo = df_novo[(df_novo['Primeiro tempo'] != '?') & (df_novo['Tempo final'] != '?')]
 
     df = df_novo
+
+    def analisar_partidas(df, primeiro_tempo, tempo_final, num_total_partidas, num_conjuntos):
+        resultado = {}
+        partidas_selecionadas = df[(df['Primeiro tempo'] == primeiro_tempo) & (df['Tempo final'] == tempo_final)]['Partidas']
+        
+        for partida in partidas_selecionadas:
+            lista_partidas = []
+            inicio = partida - 1
+            fim = inicio + num_total_partidas
+            
+            for i in range(inicio, fim):
+                conjunto_partidas = df.loc[i+1:i+num_conjuntos, 'Tempo final'].tolist()
+                lista_partidas.append(conjunto_partidas)
+            
+            resultado[partida] = lista_partidas
+        
+        return resultado
+
+    # Perguntas ao usuário
+    primeiro_tempo = st.selectbox("Qual o resultado do primeiro tempo?", df['Primeiro tempo'].unique())
+    tempo_final = st.selectbox("Qual o resultado do tempo final?", df['Tempo final'].unique())
+    num_total_partidas = st.number_input("Até que quantidade de entradas após o padrão ocorre você quer análise?", min_value=1, value=50, step=1)
+    num_conjuntos = st.selectbox("Qual o padrão de tip (de 1 a 5 jogos consecutivos)?", [1, 2, 3, 4, 5])
 
     # Chamada da função para análise das partidas
     resultado_analise = analisar_partidas(df, primeiro_tempo, tempo_final, num_total_partidas, num_conjuntos)
