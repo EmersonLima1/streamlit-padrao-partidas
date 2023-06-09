@@ -6,7 +6,7 @@ uploaded_file = st.file_uploader("Faça upload do arquivo Excel", type="xlsx")
 
 if uploaded_file:
     # Tratando o arquivo Excel e obtendo o DataFrame tratado
-    df = tratar_arquivo_excel(uploaded_file)
+    df = pd.read_excel(file_path, sheet_name='Página4')
 
     # Perguntas ao usuário
     primeiro_tempo = st.selectbox("Qual o resultado do primeiro tempo?", df['Primeiro tempo'].unique())
