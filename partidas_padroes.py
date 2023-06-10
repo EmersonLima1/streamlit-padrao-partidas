@@ -219,13 +219,7 @@ if uploaded_file:
         # Resetar os índices do DataFrame após a ordenação
         df = df.reset_index(drop=True)
 
-        styled_df = df.style.set_properties(**{'background-color': 'lightblue',
-                                              'color': 'black',
-                                              'border-color': 'white'})
-
-        st.write(styled_df)
-
         # Exibir o nome da página atual
         st.write(f"Resultado de {sheet_name}:")
         # Exibir as 5 primeiras linhas do dataframe obtido
-        st.write(styled_df.head(5))
+        st.write(df.head(5))
