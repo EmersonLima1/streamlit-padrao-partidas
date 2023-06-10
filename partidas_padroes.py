@@ -203,8 +203,7 @@ if uploaded_file:
             return novo_dicionario
 
         dicionario = criar_novo_dicionario(resultado_analise, num_total_partidas)
-
-        num_conjuntos = len(dicionario[1][0])  # Número de valores em cada lista
+        
         num_total = len(resultado_analise)
 
         data = []  # Lista para armazenar os dados das linhas do dataframe
