@@ -11,8 +11,6 @@ if uploaded_file:
     sheet_names = excel_data.sheet_names
 
     for sheet_name in sheet_names:
-        # Exibir o nome da página atual
-        st.write(f"Resultado de {sheet_name}:")
         
         # Tratando o arquivo Excel e obtendo o DataFrame tratado
         df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
@@ -227,5 +225,7 @@ if uploaded_file:
 
         st.write(styled_df)
 
+        # Exibir o nome da página atual
+        st.write(f"Resultado de {sheet_name}:")
         # Exibir as 5 primeiras linhas do dataframe obtido
         st.write(styled_df.head(5))
