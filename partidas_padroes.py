@@ -5,8 +5,11 @@ import pandas as pd
 uploaded_file = st.file_uploader("Faça upload do arquivo Excel", type="xlsx")
 
 if uploaded_file:
+    # Campo para o usuário digitar o nome da página
+    sheet_name = st.text_input("Digite o nome da página do Excel")
+
     # Tratando o arquivo Excel e obtendo o DataFrame tratado
-    df = pd.read_excel(uploaded_file, sheet_name='Página4')
+    df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
 
     # Define a primeira linha como os nomes das colunas
     df.columns = df.iloc[0]
