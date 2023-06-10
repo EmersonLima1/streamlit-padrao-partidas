@@ -5,6 +5,12 @@ from openpyxl import load_workbook
 # Carregando o arquivo Excel
 uploaded_file = st.file_uploader("Faça upload do arquivo Excel", type="xlsx")
 
+# Perguntas ao usuário
+primeiro_tempo = st.selectbox("Qual o resultado do primeiro tempo?", df['Primeiro tempo'].unique())
+tempo_final = st.selectbox("Qual o resultado do tempo final?", df['Tempo final'].unique())
+num_total_partidas = st.number_input("Até que quantidade de entradas após o padrão ocorre você quer análise?", min_value=1, value=50, step=1)
+num_conjuntos = st.selectbox("Qual o padrão de tip (de 1 a 5 jogos consecutivos)?", [1, 2, 3, 4, 5])
+
 if uploaded_file:
     # Carregar o arquivo Excel usando o openpyxl
     excel_data = pd.ExcelFile(uploaded_file)
@@ -102,12 +108,6 @@ if uploaded_file:
                 resultado[partida] = lista_partidas
             
             return resultado
-
-        # Perguntas ao usuário
-        primeiro_tempo = st.selectbox("Qual o resultado do primeiro tempo?", df['Primeiro tempo'].unique())
-        tempo_final = st.selectbox("Qual o resultado do tempo final?", df['Tempo final'].unique())
-        num_total_partidas = st.number_input("Até que quantidade de entradas após o padrão ocorre você quer análise?", min_value=1, value=50, step=1)
-        num_conjuntos = st.selectbox("Qual o padrão de tip (de 1 a 5 jogos consecutivos)?", [1, 2, 3, 4, 5])
 
         # Chamada da função para análise das partidas
         resultado_analise = analisar_partidas(df, primeiro_tempo, tempo_final, num_total_partidas, num_conjuntos)
