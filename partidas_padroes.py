@@ -5,16 +5,90 @@ from openpyxl import load_workbook
 # Carregando o arquivo Excel
 uploaded_file = st.file_uploader("Faça upload do arquivo Excel", type="xlsx")
 
-# Perguntas ao usuário
-primeiro_tempo = st.selectbox("Qual o resultado do primeiro tempo?", df['Primeiro tempo'].unique())
-tempo_final = st.selectbox("Qual o resultado do tempo final?", df['Tempo final'].unique())
-num_total_partidas = st.number_input("Até que quantidade de entradas após o padrão ocorre você quer análise?", min_value=1, value=50, step=1)
-num_conjuntos = st.selectbox("Qual o padrão de tip (de 1 a 5 jogos consecutivos)?", [1, 2, 3, 4, 5])
-
 if uploaded_file:
     # Carregar o arquivo Excel usando o openpyxl
     excel_data = pd.ExcelFile(uploaded_file)
     sheet_names = excel_data.sheet_names
+
+    # Tratando o arquivo Excel e obtendo o DataFrame tratado
+    df = pd.read_excel(uploaded_file, sheet_name='Copa do Mundo')
+
+    # Define a primeira linha como os nomes das colunas
+    df.columns = df.iloc[0]
+
+    # Remove a primeira linha, que agora são os nomes das colunas duplicados
+    df = df[1:].reset_index(drop=True)
+
+    # Obtém todas as colunas, exceto as duas últimas
+    colunas_para_manter = df.columns[:-3]
+
+    # Mantém apenas as colunas selecionadas
+    df = df[colunas_para_manter]
+
+    # Inverte o dataframe
+    df = df.sort_index(ascending=False)
+
+    # Reseta o index
+    df = df.reset_index(drop=True)
+
+    # Função para extrair os resultados do primeiro tempo, tempo final e partidas
+    def extrair_resultados(resultado):
+        if resultado != '?\n\n?':
+            resultado_split = resultado.split('\n\n')
+            primeiro_tempo = resultado_split[1]
+            tempo_final = resultado_split[0]
+            return primeiro_tempo, tempo_final
+        else:
+            return None, None
+
+    # Criando listas vazias para armazenar os valores extraídos
+    primeiro_tempo_list = []
+    tempo_final_list = []
+    partidas_list = []
+
+    # Percorrendo o dataframe original e extraindo os resultados
+    for index, row in df.iterrows():
+        for col in df.columns[1:]:
+            resultado = row[col]
+            primeiro_tempo, tempo_final = extrair_resultados(resultado)
+            primeiro_tempo_list.append(primeiro_tempo)
+            tempo_final_list.append(tempo_final)
+            partidas_list.append(col)
+
+    # Criando o novo dataframe com as colunas desejadas
+    df_novo = pd.DataFrame({
+        'Primeiro tempo': primeiro_tempo_list,
+        'Tempo final': tempo_final_list,
+    })
+
+    num_linhas = len(df_novo)
+    df_novo['Partidas'] = range(1, num_linhas + 1)
+
+    # Obtendo o nome da última coluna
+    ultima_coluna = df_novo.columns[-1]
+
+    # Extraindo a coluna "Partidas"
+    coluna_partidas = df_novo.pop(ultima_coluna)
+
+    # Inserindo a coluna "Partidas" na terceira posição
+    df_novo.insert(0, ultima_coluna, coluna_partidas)
+
+    df_novo = df_novo.dropna(subset=['Primeiro tempo', 'Tempo final'])
+
+    df_novo = df_novo[~df_novo['Primeiro tempo'].str.contains('\.', na=False) & ~df_novo['Tempo final'].str.contains('\.', na=False)]
+
+    df_novo['Primeiro tempo'] = df_novo['Primeiro tempo'].replace('oth', '9x9')
+
+    # Remover células com valor "?"
+    df_novo = df_novo[(df_novo['Primeiro tempo'] != '?') & (df_novo['Tempo final'] != '?')]
+
+    df = df_novo
+
+    # Perguntas ao usuário
+    primeiro_tempo = st.selectbox("Qual o resultado do primeiro tempo?", df['Primeiro tempo'].unique())
+    tempo_final = st.selectbox("Qual o resultado do tempo final?", df['Tempo final'].unique())
+    num_total_partidas = st.number_input("Até que quantidade de entradas após o padrão ocorre você quer análise?", min_value=1, value=50, step=1)
+    num_conjuntos = st.selectbox("Qual o padrão de tip (de 1 a 5 jogos consecutivos)?", [1, 2, 3, 4, 5])
 
     for sheet_name in sheet_names:
         
