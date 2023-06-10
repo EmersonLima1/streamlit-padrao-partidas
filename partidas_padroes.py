@@ -4,9 +4,10 @@ import pandas as pd
 # Carregando o arquivo Excel
 uploaded_file = st.file_uploader("Faça upload do arquivo Excel", type="xlsx")
 
-if uploaded_file:
-    # Campo para o usuário digitar o nome da página
-    sheet_name = st.text_input("Digite o nome da página do Excel")
+# Campo para o usuário digitar o nome da página
+sheet_name = st.text_input("Digite o nome da página do Excel")
+
+if uploaded_file and sheet_name:
 
     # Tratando o arquivo Excel e obtendo o DataFrame tratado
     df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
